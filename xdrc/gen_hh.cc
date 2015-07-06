@@ -181,12 +181,19 @@ gen(std::ostream &os, const rpc_struct &s)
     }
     os << nl << "template<";
     bool first{true};
+    std::ostringstream cond;
     for (auto &d : s.decls) {
-      if (first)
-	first = false;
-      else
-	os << "," << nl << "         ";
-      os << "typename _" << d.id << "_T";
+        if (first)
+            first = false;
+        else {
+            os << "," << nl << "         ";
+            cond << " && ";
+        }
+        os << "typename _" << d.id << "_T";
+        cond << "std::is_constructible<" << decl_type(d) << ",_" << d.id << "_T>::value";
+    }
+    if (!s.decls.empty()) {
+        os << ", typename = std::enable_if_t <" << cond.str() << ">";
     }
     os << ">"
        << nl << "explicit " << s.id << "(";
